@@ -10,6 +10,7 @@
     "tabs", "http://*/*", "https://*/*", "storage"
   ],
   "background": { "scripts": [
+    "scripts/jschardet.js",
     "scripts/parseUri.js",
     "scripts/humans.js",
     "background/background.js"

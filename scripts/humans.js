@@ -29,6 +29,7 @@ function mapifyHeaders(responseHeaders) {
 function request(url, next) {
   var request = new XMLHttpRequest();
   request.open("GET", url, true);
+  request.overrideMimeType("text/plain; charset=x-user-defined");
   request.send();
 
   request.addEventListener("load", function () {
@@ -37,7 +38,16 @@ function request(url, next) {
     if (request.status < 200 && request.status >= 400) {
       return next(new Error("We reached our target server, but it returned an error."));
     }
-    return (/text\/plain/.test(contentType)) ? next(null, request.responseText) : next(new Error("Wrong type of thing"));
+    if (/text\/plain/.test(contentType)) {
+      var response = request.responseText;
+
+      jschardet.Constants._debug = true;
+      console.log(jschardet.detect(request.responseText))
+
+      return next(null, response);
+    } else {
+      return next(new Error("Wrong type of response."));
+    };
   });
   request.addEventListener("error", function () {
     return next(new Error("There was a connection error of some sort."));
