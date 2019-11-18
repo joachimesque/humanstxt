@@ -3,26 +3,28 @@ function onError(error) {
 }
 
 function loadText(tab) {
-  var humans = chrome.extension.getBackgroundPage().humansByTab[tab.id];
-  if (humans) {
-    if (humans.finalText) return fillDocument(humans.finalText, humans.link); // already cached
-    var finalText = markdown_parser(
-                      Autolinker.link(humans.text, {
-                          mention: "twitter",
-                          hashtag: "twitter"
-                        })
-                      );
 
-    finalText = "<div>" + finalText + "</div>";
-    humans.finalText = finalText;
-    fillDocument(finalText, humans.link);
+  chrome.runtime.sendMessage({ action: "loadHumans", tab: tab }, function (response) {
 
-  } else {
-    document.querySelector("#humansText").textContent = "No humans were detected.";
-  }
+    if (response && response.content) {
+      var finalText = markdown_parser(
+        Autolinker.link(response.content, {
+          mention: "twitter",
+          hashtag: "twitter"
+        })
+      );
+
+      finalText = "<div>" + finalText + "</div>";
+      fillDocument(finalText, response.url);
+
+    } else {
+      document.querySelector("#humansText").textContent = "No humans were detected.";
+    }
+
+  });
 };
 
-function fillDocument(finalText, link){
+function fillDocument(finalText, link) {
   // https://devtidbits.com/2017/12/06/quick-fix-the-unsafe_var_assignment-warning-in-javascript/
   const parser = new DOMParser();
   const parsed = parser.parseFromString(finalText, 'text/html');
@@ -34,8 +36,8 @@ function fillDocument(finalText, link){
   document.querySelector("#humansLink").setAttribute("title", link);
 }
 
-chrome.tabs.query({active: true, currentWindow: true}, function(result) {
-  result.forEach(function(tab){loadText(tab)});
+chrome.tabs.query({ active: true, currentWindow: true }, function (result) {
+  result.forEach(function (tab) { loadText(tab) });
 });
 
 // ASCII ART MODE
@@ -49,14 +51,14 @@ function onGot(item) {
 }
 
 function contentLoaded() {
-  if(typeof browser == "undefined"){
+  if (typeof browser == "undefined") {
     var getting = chrome.storage.local.get("ascii_mode", onGot);
   } else {
     var getting = browser.storage.local.get("ascii_mode");
     getting.then(onGot, onError);
   }
 
-  document.querySelector("#asciiModeToggle").addEventListener("change", function(){
+  document.querySelector("#asciiModeToggle").addEventListener("change", function () {
     document.querySelector("#humansText").classList.toggle("ascii_mode");
   });
 }
